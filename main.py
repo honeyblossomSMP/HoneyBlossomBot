@@ -237,4 +237,31 @@ async def ily(interaction: discord.Interaction, mc_username: str):
         await interaction.followup.send(f"💖 Sent to **{mc_username}**!")
     except Exception as e: await interaction.followup.send(f"❌ Error: {e}", ephemeral=True)
 
+@bot.tree.command(name="msg", description="Send a private message to a player in-game")
+async def msg(interaction: discord.Interaction, mc_username: str, message: str):
+    """Sends a tellraw message to a specific player. Accessible by everyone."""
+    sender = interaction.user.display_name
+    
+    # Minecraft JSON formatting for the message
+    # Logic: [Discord] Sender: Message
+    mc_cmd = (
+        f'tellraw {mc_username} ["",'
+        f'{{"text":"[Discord] ","color":"gray"}},'
+        f'{{"text":"{sender}","color":"gold"}},'
+        f'{{"text":": ","color":"white"}},'
+        f'{{"text":"{message}","color":"white"}}]'
+    )
+    
+    await interaction.response.defer(ephemeral=True)
+    try:
+        client = aiomcrcon.Client(MC_IP, RCON_PORT, RCON_PASS)
+        await client.connect()
+        await client.send_cmd(mc_cmd)
+        await client.close()
+        
+        # Confirmation only the Discord user sees
+        await interaction.followup.send(f"📬 Message sent to **{mc_username}**!", ephemeral=True)
+    except Exception as e:
+        await interaction.followup.send(f"❌ Could not reach the server: {e}", ephemeral=True)
+        
 bot.run(TOKEN)
