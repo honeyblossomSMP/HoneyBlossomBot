@@ -7,10 +7,7 @@ import os
 import re 
 from dotenv import load_dotenv 
 
-# --- C-STYLE PATH SAFETY ---
-script_dir = os.path.dirname(os.path.abspath(__file__))
-dotenv_path = os.path.join(script_dir, '.env')
-load_dotenv(dotenv_path)
+load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 MC_IP = os.getenv("MC_IP")
@@ -27,9 +24,6 @@ SUPPORT_TICKET_CHANNEL_ID = 1461434607072317594
 VERIFICATION_CHANNEL_ID = 1459372997918851173
 ADMIN_CHAT_CHANNEL_ID = 1460396224548049052
 
-if TOKEN is None:
-    print(f"❌ ERROR: DISCORD_TOKEN is NULL. Check: {dotenv_path}")
-    exit(1)
 
 # --- MODALS & VIEWS ---
 
