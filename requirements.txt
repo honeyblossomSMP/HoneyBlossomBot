@@ -1,0 +1,3 @@
+discord.py
+aio-mc-rcon
+python-dotenv
