@@ -163,8 +163,13 @@ class WhitelistBot(commands.Bot):
         self.add_view(StaffAppLauncher())
         
         self.loop.create_task(self.server_watchdog())
+        MY_GUILD_ID = 1455335261331263663
+        guild = discord.Object(id=MY_GUILD_ID)
+        
+        self.tree.copy_global_to(guild=guild)
+        await self.tree.sync(guild=guild)
         await self.tree.sync()
-        print(f"✅ Bot is ready!")
+        print(f"✅ Bot is ready and synced to {MY_GUILD_ID}")
 
     async def on_member_join(self, member):
         channel = self.get_channel(WELCOME_CHANNEL_ID)
