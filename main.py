@@ -332,5 +332,19 @@ async def tellplayer(interaction: discord.Interaction, player_name: str, message
         await interaction.followup.send(f"✉️ Anonymous message sent to **{player_name}**.", ephemeral=True)
     except Exception as e:
         await interaction.followup.send(f"❌ RCON Error: {e}", ephemeral=True)
+
+@bot.tree.command(name="ily", description="Send a love message in-game!")
+async def ily(interaction: discord.Interaction, mc_username: str):
+    sender = interaction.user.display_name
+    mc_cmd = f'tellraw {mc_username} {{"text":"","extra":[{{ "text":"{sender}","color":"aqua"}},{{"text":" said I love you!","color":"light_purple"}}]}}'
+    await interaction.response.defer()
+    try:
+        client = aiomcrcon.Client(MC_IP, RCON_PORT, RCON_PASS)
+        await client.connect()
+        await client.send_cmd(mc_cmd)
+        await client.close()
+        await interaction.followup.send(f"💖 Sent to **{mc_username}**!")
+    except Exception as e: await interaction.followup.send(f"❌ Error: {e}", ephemeral=True)
+
    
 bot.run(TOKEN)
