@@ -23,6 +23,7 @@ RULES_CHANNEL_ID = 1459116888444506194
 SUPPORT_TICKET_CHANNEL_ID = 1461434607072317594 
 VERIFICATION_CHANNEL_ID = 1459372997918851173
 ADMIN_CHAT_CHANNEL_ID = 1460396224548049052
+ANNOUNCEMENT_CHANNEL_ID = 1456539951872217277
 
 # --- MODALS ---
 
@@ -235,7 +236,7 @@ async def players(interaction: discord.Interaction):
         await client.connect()
         raw_response, _ = await client.send_cmd("list")
         await client.close()
-        # Cleaning logic
+        # idk how regex work so i still need to clean this up
         clean_text = re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', '', raw_response)
         clean_text = re.sub(r'§[0-9a-fk-orx]', '', clean_text, flags=re.IGNORECASE)
         single_line = " ".join(clean_text.splitlines())
@@ -274,4 +275,63 @@ async def msg(interaction: discord.Interaction, mc_username: str, message: str):
         await interaction.followup.send(f"📬 Message sent to **{mc_username}**!", ephemeral=True)
     except Exception as e: await interaction.followup.send(f"❌ Error: {e}", ephemeral=True)
 
+@bot.tree.command(name="announce", description="Send a maintenance or text announcement (Staff Only)")
+@app_commands.checks.has_role(STAFF_ROLE_ID)
+@app_commands.choices(type=[
+    app_commands.Choice(name="maintenance", value="maintenance"),
+    app_commands.Choice(name="text", value="text")
+])
+async def announce(
+    interaction: discord.Interaction, 
+    type: str, 
+    arg2: str, 
+    arg3: str = None
+):
+    announcement_channel = interaction.guild.get_channel(ANNOUNCEMENT_CHANNEL_ID)
+    if not announcement_channel:
+        return await interaction.response.send_message("❌ Announcement channel not found.", ephemeral=True)
+
+    await interaction.response.defer(ephemeral=True)
+
+    if type == "maintenance":
+        discord_msg = (
+            "🛠️ **Maintenance Notice**\n"
+            f"Hello @everyone! We will be having a brief maintenance break on {arg2} "
+            "to apply some quick updates and optimizations to the server.\n\n"
+            f"⏳ **Estimated Duration:** {arg3}\n\n"
+            "The server will be unavailable during this time. We apologize for the "
+            "interruption and appreciate your patience as we work to keep Honey Blossom running smoothly!"
+        )
+        mc_cmd = 'say A maintenance break has been announced, check out discord for more info!'
+        
+    else: 
+        discord_msg = arg2
+        mc_cmd = f'say {arg2}'
+
+    await announcement_channel.send(discord_msg)
+
+    try:
+        client = aiomcrcon.Client(MC_IP, RCON_PORT, RCON_PASS)
+        await client.connect()
+        await client.send_cmd(mc_cmd)
+        await client.close()
+        await interaction.followup.send("✅ Announcement sent to both Discord and Minecraft!", ephemeral=True)
+    except Exception as e:
+        await interaction.followup.send(f"⚠️ Discord sent, but Minecraft RCON failed: {e}", ephemeral=True)
+
+@bot.tree.command(name="tellplayer", description="Send an anonymous staff message to a player (Staff Only)")
+@app_commands.checks.has_role(STAFF_ROLE_ID)
+async def tellplayer(interaction: discord.Interaction, player_name: str, message: str):
+    mc_cmd = (f'tellraw {player_name} ["", {{"text":"[Staff] ","color":"red"}}, {{"text":": ","color":"white"}}, {{"text":"{message}","color":"white"}}]')
+    
+    await interaction.response.defer(ephemeral=True)
+    try:
+        client = aiomcrcon.Client(MC_IP, RCON_PORT, RCON_PASS)
+        await client.connect()
+        await client.send_cmd(mc_cmd)
+        await client.close()
+        await interaction.followup.send(f"✉️ Anonymous message sent to **{player_name}**.", ephemeral=True)
+    except Exception as e:
+        await interaction.followup.send(f"❌ RCON Error: {e}", ephemeral=True)
+   
 bot.run(TOKEN)
