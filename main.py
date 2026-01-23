@@ -229,25 +229,50 @@ async def setup_staff(interaction: discord.Interaction):
 
 @bot.tree.command(name="players", description="Shows the online players")
 async def players(interaction: discord.Interaction):
-    await interaction.response.defer() 
+    await interaction.response.defer()
+    
     try:
+        # Define the client inside the command
         client = aiomcrcon.Client(MC_IP, RCON_PORT, RCON_PASS)
         await client.connect()
         raw_response, _ = await client.send_cmd("list")
         await client.close()
-        # idk how regex work so i still need to clean this up
+
+        # --- START OF TOM'S CLEANING LOGIC ---
         clean_text = re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', '', raw_response)
         clean_text = re.sub(r'§[0-9a-fk-orx]', '', clean_text, flags=re.IGNORECASE)
         single_line = " ".join(clean_text.splitlines())
         count_match = re.search(r'(\d+ out of maximum \d+)', single_line)
         header = count_match.group(1) + " players online." if count_match else "Server Status"
-        
-        embed = discord.Embed(title="🏰 Honey Blossom SMP Status", description=f"**{header}**", color=discord.Color.gold())
-        embed.set_footer(text=f"IP: {MC_IP}")
-        await interaction.followup.send(embed=embed)
-    except Exception as e:
-        await interaction.followup.send(f"❌ Connection Error: {e}", ephemeral=True)
 
+        groups = ['dev', 'founder', 'adminbeestrator', 'mod-busybee', 'luckperms', 'patron', 'default', 'adiksan']
+
+        if count_match:
+            names_blob = single_line.split(count_match.group(1))[-1].strip()
+            names_blob = re.sub(r'^\s*[:\.]\s*', '', names_blob).lstrip('.: ')
+            names_blob = names_blob.replace('players online.', '')
+            for perm in groups:
+                names_blob = names_blob.replace(perm + ':', '')
+            raw_list = re.split(r',\s*|\s+(?=\[)', names_blob)
+            player_names = [p.strip() for p in raw_list if p.strip()]
+            player_list = "\n".join([f"• {p}" for p in player_names if p.lower() not in ['online', 'players']])
+        else:
+            player_list = "_No players online._"
+
+        embed = discord.Embed(
+            title="🏰 Honey Blossom SMP Status", 
+            description=f"**{header}**", 
+            color=discord.Color.gold()
+        )
+        # Ensure player_list isn't empty after filtering
+        embed.add_field(name="Online Players", value=player_list or "_No players online._", inline=False)
+        embed.set_footer(text=f"IP: {MC_IP}")
+        
+        await interaction.followup.send(embed=embed)
+
+    except Exception as e:
+        await interaction.followup.send(f"❌ Error: {e}")
+        
 @bot.tree.command(name="whitelist", description="Add a player to the server")
 @app_commands.checks.has_role(STAFF_ROLE_ID) 
 async def whitelist(interaction: discord.Interaction, username: str, platform: str):
