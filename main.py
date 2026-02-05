@@ -245,7 +245,7 @@ async def players(interaction: discord.Interaction):
         count_match = re.search(r'(\d+ out of maximum \d+)', single_line)
         header = count_match.group(1) + " players online." if count_match else "Server Status"
 
-        groups = ['dev', 'founder', 'adminbeestrator', 'mod-busybee', 'luckperms', 'patron', 'default', 'adiksan']
+        groups = ['dev', 'founder', 'adminbeestrator', 'mod-busybee', 'luckperms', 'patron', 'default', 'helper']
 
         if count_match:
             names_blob = single_line.split(count_match.group(1))[-1].strip()
